@@ -5,31 +5,49 @@ import ExcelJS from "exceljs";
 
 Chart.register(ChartDataLabels);
 
-function groupByDate(rows = []) {
+function normalizeLogRows(rows = []) {
+  return rows
+    .map((row) => ({
+      date: row?.date ?? "",
+      subcontractor: row?.subcontractor?.trim() ?? "",
+      subcontractorLabel: (row?.subcontractor ?? "").slice(0, 2).toUpperCase(),
+      workers: Number(row?.workers ?? 0) || 0,
+      installed_panels: Number(row?.installed_panels ?? 0) || 0
+    }))
+    .filter((row) => !!row.date);
+}
+
+function aggregateByDate(rows = []) {
   const grouped = new Map();
-  for (const row of rows) {
-    const date = row?.date ?? "";
-    if (!date) continue;
-    const entry = grouped.get(date) ?? {
-      date,
+
+  rows.forEach((row) => {
+    const entry = grouped.get(row.date) ?? {
+      date: row.date,
       workers: 0,
       installed_panels: 0,
-      subcontractors: new Set()
+      subcontractorInitials: new Set(),
+      subcontractorNames: new Set()
     };
-    entry.workers += Number(row?.workers ?? 0) || 0;
-    entry.installed_panels += Number(row?.installed_panels ?? 0) || 0;
-    if (row?.subcontractor) {
-      entry.subcontractors.add(row.subcontractor);
+
+    entry.workers += row.workers;
+    entry.installed_panels += row.installed_panels;
+    if (row.subcontractorLabel) {
+      entry.subcontractorInitials.add(row.subcontractorLabel);
     }
-    grouped.set(date, entry);
-  }
+    if (row.subcontractor) {
+      entry.subcontractorNames.add(row.subcontractor);
+    }
+
+    grouped.set(row.date, entry);
+  });
 
   return Array.from(grouped.values())
     .map((entry) => ({
-      ...entry,
-      subcontractorLabel: Array.from(entry.subcontractors)
-        .map((name) => name.slice(0, 2).toUpperCase())
-        .join(" & ")
+      date: entry.date,
+      workers: entry.workers,
+      installed_panels: entry.installed_panels,
+      subcontractorLabel: Array.from(entry.subcontractorInitials).join(" & "),
+      subcontractorNames: Array.from(entry.subcontractorNames).join(" / ")
     }))
     .sort((a, b) => new Date(a.date) - new Date(b.date));
 }
@@ -49,8 +67,9 @@ async function buildChartImage(aggregated) {
   }
 
   const labels = aggregated.map((row) => row.date);
-  const data = aggregated.map((row) => row.installed_panels / 3); // Convert panels to meters
+  const data = aggregated.map((row) => row.installed_panels);
   const maxValue = Math.max(...data);
+  const suggestedYMax = Math.max(Math.ceil(maxValue * 1.1), 10);
 
   const chart = new Chart(ctx, {
     type: "bar",
@@ -68,7 +87,7 @@ async function buildChartImage(aggregated) {
             align: "start",
             formatter: (_, context) => {
               const row = aggregated[context.dataIndex];
-              return row.subcontractorLabel ? `${row.subcontractorLabel}-${row.workers}` : `${row.workers}`;
+              return `${row.subcontractorLabel}-${row.workers}`;
             },
             color: "#0f172a",
             font: {
@@ -81,6 +100,7 @@ async function buildChartImage(aggregated) {
     },
     options: {
       responsive: false,
+      animation: false,
       plugins: {
         legend: { display: false }
       },
@@ -93,11 +113,11 @@ async function buildChartImage(aggregated) {
           ticks: { color: "#0f172a" }
         },
         y: {
-          min: 0,
-          max: 2000,
+          beginAtZero: true,
+          suggestedMax: suggestedYMax,
           title: {
             display: true,
-            text: 'Pulled Cable Amount'
+            text: 'Installed Panels'
           },
           ticks: { color: "#0f172a" }
         }
@@ -114,10 +134,10 @@ async function buildChartImage(aggregated) {
   return base64;
 }
 
-async function buildWorkbook(aggregated, chartImage) {
+async function buildWorkbook(aggregatedRows, chartImage) {
   const workbook = new ExcelJS.Workbook();
   workbook.created = new Date();
-  const sheet = workbook.addWorksheet("Daily Summary");
+  const sheet = workbook.addWorksheet("Daily Log");
   sheet.columns = [
     { header: "Date", key: "date", width: 15 },
     { header: "Subcontractor", key: "subcontractor", width: 20 },
@@ -125,10 +145,10 @@ async function buildWorkbook(aggregated, chartImage) {
     { header: "Installed", key: "installed_panels", width: 14 }
   ];
 
-  aggregated.forEach((row) => {
+  aggregatedRows.forEach((row) => {
     sheet.addRow({
       date: row.date,
-      subcontractor: row.subcontractorLabel,
+      subcontractor: row.subcontractorNames || row.subcontractorLabel,
       workers: row.workers,
       installed_panels: row.installed_panels
     });
@@ -164,9 +184,14 @@ export function useChartExport() {
       console.warn("Daily log is empty; nothing to export.");
       return;
     }
-    const aggregated = groupByDate(dailyLog);
-    if (!aggregated.length) {
+    const normalized = normalizeLogRows(dailyLog);
+    if (!normalized.length) {
       console.warn("No valid rows to export.");
+      return;
+    }
+    const aggregated = aggregateByDate(normalized);
+    if (!aggregated.length) {
+      console.warn("No daily sums could be produced.");
       return;
     }
     const chartImage = await buildChartImage(aggregated);

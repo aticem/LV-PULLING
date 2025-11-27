@@ -1,5 +1,4 @@
 const LV_CSV_CANDIDATES = ["/LV.CSV", "/lv.csv"];
-export const LENGTH_MULTIPLIER = 3;
 
 export function normalizeId(id) {
   if (typeof id !== "string") return "";

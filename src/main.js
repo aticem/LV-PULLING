@@ -8,7 +8,6 @@ const resetButton = document.getElementById("lv-reset");
 const statusEl = document.getElementById("lv-status");
 
 const TABLE_ID_REGEX = /-STR\d+$/i;
-const LENGTH_MULTIPLIER = 3;
 const TABLE_LAYER_DEFAULT_STYLE = {
   color: "#475569",
   weight: 1,
@@ -326,7 +325,7 @@ function handleMarkerClick(id, marker, lengthsMap) {
     return;
   }
 
-  const scaledLength = Number(matchingLength * LENGTH_MULTIPLIER);
+  const scaledLength = Number(matchingLength);
   state.selected.set(id, scaledLength);
   state.totalMeters += scaledLength;
   setMarkerSelected(marker, true);

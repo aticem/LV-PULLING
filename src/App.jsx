@@ -8,7 +8,6 @@ import {
   loadCableLengths,
   loadLabelGeojson,
   loadTableGeojson,
-  LENGTH_MULTIPLIER,
   normalizeId
 } from "./lib/dataLoader.js";
 import {
@@ -56,7 +55,7 @@ export default function App() {
           const inverterId = getFeatureId(feature);
           const normalizedId = normalizeId(inverterId ?? "");
           const meters = lengthsMap.get(normalizedId) ?? 0;
-          const totalPanels = Number(meters * LENGTH_MULTIPLIER) || 1;
+          const totalPanels = Number(meters) || 0;
           return {
             ...feature,
             properties: {
@@ -159,6 +158,20 @@ export default function App() {
     }
   }, [features, redoStack]);
 
+  const handleResetLog = useCallback(() => {
+    if (window.confirm("Are you sure you want to clear all daily records and reset progress? This cannot be undone.")) {
+      resetLog();
+      setFeatures((prev) =>
+        prev.map((feature) => ({
+          ...feature,
+          properties: { ...feature.properties, status: "pending" }
+        }))
+      );
+      setHistory([]);
+      setRedoStack([]);
+    }
+  }, [resetLog]);
+
   const handleSubmitModal = useCallback(
     (payload) => {
       addRecord({
@@ -218,8 +231,7 @@ export default function App() {
           <button
             type="button"
             className="lv-button lv-button--ghost"
-            disabled={!dailyLog.length}
-            onClick={resetLog}
+            onClick={handleResetLog}
           >
             Reset Log
           </button>

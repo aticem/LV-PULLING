@@ -7,7 +7,7 @@ export default function ProgressStats({
   return (
     <section className="lv-panel">
       <div className="lv-panel__info">
-        <h1>ENEL Work Tracker</h1>
+        <h1>LV Cable Pulling Progress Tracker</h1>
         <p className="lv-panel__total">
           Total: {totalMeters.toLocaleString()}m | Completed: {completedMeters.toLocaleString()}m | {completionPercentage}% | Remaining: {remainingMeters.toLocaleString()}m
         </p>
