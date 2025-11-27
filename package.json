@@ -12,7 +12,6 @@
     "vite": "^7.2.4"
   },
   "dependencies": {
-    "@turf/turf": "^7.3.1",
-    "maplibre-gl": "^5.13.0"
+    "leaflet": "^1.9.4"
   }
 }
