@@ -8,6 +8,7 @@ const resetButton = document.getElementById("lv-reset");
 const statusEl = document.getElementById("lv-status");
 
 const TABLE_ID_REGEX = /-STR\d+$/i;
+const LENGTH_MULTIPLIER = 3;
 const TABLE_LAYER_DEFAULT_STYLE = {
   color: "#475569",
   weight: 1,
@@ -30,6 +31,14 @@ const state = {
 };
 
 const LV_CSV_CANDIDATES = ["/LV.CSV", "/lv.csv"];
+
+function normalizeId(id) {
+  if (typeof id !== "string") return "";
+  const trimmed = id.trim();
+  if (!trimmed) return "";
+  const withoutSpacesBeforeDigits = trimmed.replace(/\s+(?=\d)/g, "");
+  return withoutSpacesBeforeDigits.replace(/\d+/g, (segment) => String(Number(segment)));
+}
 
 function setStatus(message) {
   if (!statusEl) return;
@@ -67,8 +76,9 @@ function parseLengths(csvText) {
     const rawLength = cells[lengthIndex >= 0 ? lengthIndex : 1];
     const parsedLength = Number(rawLength?.replace?.(",", "."));
 
-    if (!id || Number.isNaN(parsedLength)) continue;
-    lengths.set(id, parsedLength);
+    const normalizedId = normalizeId(id);
+    if (!normalizedId || Number.isNaN(parsedLength)) continue;
+    lengths.set(normalizedId, parsedLength);
   }
 
   return lengths;
@@ -160,6 +170,73 @@ function getRingsFromGeometry(geometry) {
   return [];
 }
 
+function ensureClosedRing(ring) {
+  if (!ring.length) return ring;
+  const [firstLng, firstLat] = ring[0];
+  const [lastLng, lastLat] = ring[ring.length - 1];
+  if (Math.abs(firstLng - lastLng) < 1e-12 && Math.abs(firstLat - lastLat) < 1e-12) {
+    return ring;
+  }
+  return [...ring, [firstLng, firstLat]];
+}
+
+function convertLineStringToPolygon(feature) {
+  const coordinates = feature?.geometry?.coordinates;
+  if (!coordinates) return null;
+  const ring = coordinates.map(extractCoordinates).filter(Boolean);
+  if (ring.length < 3) return null;
+  return {
+    ...feature,
+    geometry: {
+      type: "Polygon",
+      coordinates: [ensureClosedRing(ring)]
+    }
+  };
+}
+
+function convertMultiLineStringToPolygon(feature) {
+  const lines = feature?.geometry?.coordinates;
+  if (!Array.isArray(lines)) return null;
+  const polygons = [];
+  for (const line of lines) {
+    const ring = (line ?? []).map(extractCoordinates).filter(Boolean);
+    if (ring.length >= 3) {
+      polygons.push([ensureClosedRing(ring)]);
+    }
+  }
+  if (!polygons.length) return null;
+  return {
+    ...feature,
+    geometry: {
+      type: "MultiPolygon",
+      coordinates: polygons
+    }
+  };
+}
+
+function convertTablesToPolygons(tableGeojson) {
+  const features = tableGeojson?.features ?? [];
+  const converted = [];
+
+  for (const feature of features) {
+    if (!feature?.geometry) continue;
+    if (feature.geometry.type === "LineString") {
+      const polyFeature = convertLineStringToPolygon(feature);
+      if (polyFeature) converted.push(polyFeature);
+    } else if (feature.geometry.type === "MultiLineString") {
+      const polyFeature = convertMultiLineStringToPolygon(feature);
+      if (polyFeature) converted.push(polyFeature);
+    } else {
+      converted.push(feature);
+    }
+  }
+
+  return {
+    type: "FeatureCollection",
+    features: converted
+  };
+}
+
 function findTableLabelsForGeometry(geometry, tableLabelPoints) {
   const rings = getRingsFromGeometry(geometry).filter((ring) => ring.length >= 3);
   if (!rings.length) return [];
@@ -238,7 +315,7 @@ function updateSelectionUI() {
 function handleMarkerClick(id, marker, lengthsMap) {
   if (!id) return;
 
-  const matchingLength = lengthsMap.get(id);
+  const matchingLength = lengthsMap.get(normalizeId(id));
   if (matchingLength == null) {
     setStatus(`No LV length found for ${id}.`);
     return;
@@ -249,11 +326,12 @@ function handleMarkerClick(id, marker, lengthsMap) {
     return;
   }
 
-  state.selected.set(id, matchingLength);
-  state.totalMeters += matchingLength;
+  const scaledLength = Number(matchingLength * LENGTH_MULTIPLIER);
+  state.selected.set(id, scaledLength);
+  state.totalMeters += scaledLength;
   setMarkerSelected(marker, true);
   updateSelectionUI();
-  setStatus(`Added ${id}: ${matchingLength} m`);
+  setStatus(`Added ${id}: ${scaledLength} m`);
 }
 
 function resetSelections() {
@@ -369,7 +447,8 @@ async function bootstrap() {
       loadTableGeojson()
     ]);
     const { inverterGeojson, tableLabelPoints } = partitionLabelFeatures(labelGeojson);
-    initializeMap(lengthsMap, inverterGeojson, tableGeojson, tableLabelPoints);
+    const polygonizedTables = convertTablesToPolygons(tableGeojson);
+    initializeMap(lengthsMap, inverterGeojson, polygonizedTables, tableLabelPoints);
   } catch (error) {
     console.error(error);
     setStatus(error.message);

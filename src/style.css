@@ -10,124 +10,204 @@
   box-sizing: border-box;
 }
 
-html,
-body,
-#app {
-  height: 100%;
-  margin: 0;
-}
-
 body {
+  margin: 0;
+  min-height: 100vh;
   background-color: #f5f5f5;
 }
 
-#app {
+#root {
+  min-height: 100vh;
+}
+
+.lv-app {
+  min-height: 100vh;
   display: flex;
   flex-direction: column;
-  gap: 1rem;
-  padding: 1rem;
+  gap: 1.25rem;
+  padding: 1.5rem;
 }
 
 .lv-panel {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 1rem 1.5rem;
+  flex-direction: column;
+  gap: 1rem;
+  padding: 1.25rem 1.5rem;
   background: #ffffff;
-  border-radius: 12px;
+  border-radius: 16px;
   box-shadow: 0 10px 30px rgba(15, 23, 42, 0.1);
+}
+
+.lv-panel__info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
 }
 
 .lv-panel h1 {
   margin: 0;
-  font-size: 1.5rem;
+  font-size: 1.6rem;
   color: #111827;
 }
 
 .lv-panel__total {
-  margin: 0.25rem 0 0;
+  margin: 0;
   font-size: 1rem;
   color: #475569;
 }
 
-#lv-total-value {
+.lv-panel__total span {
+  margin-left: 0.5rem;
+  font-size: 1.6rem;
   font-weight: 700;
-  font-size: 1.25rem;
   color: #16a34a;
 }
 
-button {
-  border: none;
-  border-radius: 999px;
-  padding: 0.65rem 1.5rem;
-  font-size: 1rem;
-  font-weight: 600;
-  cursor: pointer;
-  background-color: #dc2626;
-  color: #fff;
-  transition: background-color 0.2s ease, transform 0.1s ease;
+.lv-panel__metrics {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 1rem;
+  width: 100%;
 }
 
-button:hover {
-  background-color: #b91c1c;
-}
-
-button:active {
-  transform: scale(0.97);
-}
-
-.lv-selection {
-  background: #ffffff;
+.lv-metric {
+  background: #f8fafc;
   border-radius: 12px;
-  padding: 1rem 1.25rem 1.25rem;
-  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
+  padding: 0.75rem 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.lv-metric span {
+  font-size: 0.85rem;
+  color: #64748b;
+}
+
+.lv-metric strong {
+  font-size: 1.25rem;
+  color: #111827;
+}
+
+.lv-actions {
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
 }
 
-.lv-selection__header {
+.lv-actions__group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.lv-button {
+  border: none;
+  border-radius: 999px;
+  padding: 0.65rem 1.6rem;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  background-color: #2563eb;
+  color: #fff;
+  transition: background-color 0.2s ease, transform 0.1s ease;
+}
+
+.lv-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.lv-button:not(:disabled):hover {
+  background-color: #1d4ed8;
+}
+
+.lv-button:active {
+  transform: scale(0.97);
+}
+
+.lv-button--secondary {
+  background-color: #16a34a;
+}
+
+.lv-button--secondary:not(:disabled):hover {
+  background-color: #15803d;
+}
+
+.lv-button--ghost {
+  background-color: transparent;
+  color: #0f172a;
+  border: 1px solid #cbd5f5;
+}
+
+.lv-error {
+  margin: 0;
+  color: #dc2626;
+  font-weight: 600;
+}
+
+.lv-map-wrapper {
+  position: relative;
+  min-height: 480px;
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 20px 35px rgba(15, 23, 42, 0.12);
+}
+
+.lv-map {
+  height: 480px;
+  width: 100%;
+}
+
+.lv-map__loading {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(248, 250, 252, 0.85);
+  color: #0f172a;
+  font-weight: 600;
+  z-index: 10;
+}
+
+.lv-log {
+  background: #fff;
+  border-radius: 16px;
+  padding: 1.25rem 1.5rem;
+  box-shadow: 0 10px 25px rgba(15, 23, 42, 0.08);
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.lv-log header {
   display: flex;
   flex-wrap: wrap;
   justify-content: space-between;
   gap: 0.5rem;
-  align-items: baseline;
 }
 
-.lv-selection h2 {
+.lv-log h2 {
   margin: 0;
-  font-size: 1.15rem;
-  color: #0f172a;
 }
 
-.lv-status {
+.lv-log ul {
+  list-style: none;
+  padding: 0;
   margin: 0;
-  font-size: 0.95rem;
-  color: #475569;
-}
-
-.lv-selection__list {
   display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-  min-height: 28px;
-}
-
-.lv-chip {
-  display: inline-flex;
-  align-items: center;
+  flex-direction: column;
   gap: 0.65rem;
-  padding: 0.45rem 0.9rem;
-  border-radius: 999px;
-  background-color: #fee2e2;
-  color: #b91c1c;
-  font-weight: 600;
-  font-size: 0.95rem;
 }
 
-.lv-chip__length {
-  font-weight: 700;
-  color: #0f172a;
+.lv-log li {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
 }
 
 .lv-selection__empty {
@@ -136,11 +216,68 @@ button:active {
   font-size: 0.95rem;
 }
 
-#map {
-  flex: 1;
-  border-radius: 12px;
-  overflow: hidden;
-  box-shadow: 0 20px 35px rgba(15, 23, 42, 0.12);
+.lv-modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  z-index: 1000;
+}
+
+.lv-modal__content {
+  width: min(420px, 100%);
+  background: #fff;
+  border-radius: 16px;
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.lv-modal__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.lv-modal__close {
+  border: none;
+  background: transparent;
+  font-size: 1.5rem;
+  cursor: pointer;
+}
+
+.lv-modal__form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.lv-modal__form label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  font-weight: 600;
+}
+
+.lv-modal__form input {
+  padding: 0.55rem 0.75rem;
+  border-radius: 8px;
+  border: 1px solid #cbd5f5;
+  font-size: 1rem;
+}
+
+.lv-modal__summary {
+  margin: 0.5rem 0 0;
+}
+
+.lv-modal__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
 }
 
 .lv-inverter-label {
@@ -185,19 +322,16 @@ button:active {
 }
 
 @media (max-width: 768px) {
-  #app {
-    padding: 0.75rem;
-  }
-
-  .lv-panel,
-  .lv-selection {
+  .lv-app {
     padding: 1rem;
   }
 
-  .lv-panel {
+  .lv-actions__group {
     flex-direction: column;
-    align-items: flex-start;
-    gap: 0.75rem;
+  }
+
+  .lv-panel {
+    padding: 1rem;
   }
 }
 

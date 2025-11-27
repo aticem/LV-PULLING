@@ -7,30 +7,7 @@
   </head>
 
   <body>
-    <div id="app">
-      <header class="lv-panel">
-        <div class="lv-panel__info">
-          <h1>LV Cable Pulling</h1>
-          <p class="lv-panel__total">
-            Total Pulled:
-            <span id="lv-total-value">0</span>
-            m
-          </p>
-        </div>
-        <button id="lv-reset" type="button">Reset</button>
-      </header>
-
-      <section class="lv-selection">
-        <div class="lv-selection__header">
-          <h2>Selected Inverters</h2>
-          <p id="lv-status" class="lv-status" aria-live="polite"></p>
-        </div>
-        <div id="lv-selection-list" class="lv-selection__list"></div>
-      </section>
-
-      <div id="map" role="region" aria-label="LV inverter map"></div>
-    </div>
-
-    <script type="module" src="/src/main.js"></script>
+    <div id="root"></div>
+    <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>
